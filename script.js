@@ -1,5 +1,5 @@
 // URL base de la API (para entorno local)
-const API_URL = 'http://localhost:5000/api/Tasks';
+const API_URL = 'https://github.com/Ricarpell/GestorTareasBack/api/Tasks';
 
 // Elementos del DOM
 const addTaskForm = document.getElementById('addTaskForm');

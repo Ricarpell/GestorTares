@@ -14,8 +14,8 @@
         <div class="task-form">
             <h2>Agregar Nueva Tarea</h2>
             <form id="addTaskForm">
-                <input type="text" id="title" placeholder="Título" required>
-                <textarea id="description" placeholder="Descripción" required></textarea>
+                <input type="text" id="title" placeholder="Título" maxlength="100" required>
+                <textarea id="description" placeholder="Descripción" maxlength="500" required></textarea>
                 <button type="submit">Agregar Tarea</button>
             </form>
         </div>
@@ -24,6 +24,20 @@
         <div class="task-list">
             <h2>Tus Tareas</h2>
             <div id="tasksContainer"></div>
+        </div>
+    </div>
+
+    <!-- Modal para editar tareas -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Tarea</h2>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                <input type="text" id="editTitle" placeholder="Título" maxlength="100" required>
+                <textarea id="editDescription" placeholder="Descripción" maxlength="500" required></textarea>
+                <button type="submit">Guardar Cambios</button>
+            </form>
         </div>
     </div>
 

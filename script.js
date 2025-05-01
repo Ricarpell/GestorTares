@@ -1,19 +1,39 @@
-// URL base de tu API (ajusta según sea necesario)
-const API_URL = 'http://localhost:5000/api/tasks';
+// URL base de la API (para entorno local)
+const API_URL = 'http://localhost:5000/api/Tasks';
 
 // Elementos del DOM
 const addTaskForm = document.getElementById('addTaskForm');
 const tasksContainer = document.getElementById('tasksContainer');
+const editModal = document.getElementById('editModal');
+const editTaskForm = document.getElementById('editTaskForm');
+const closeModal = document.getElementsByClassName('close')[0];
+
+// Función para escapar caracteres HTML y prevenir XSS
+function escapeHTML(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[&<>"']/g, match => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&apos;' // Corrección del error de tipeo
+    })[match]);
+}
 
 // Cargar tareas al iniciar
 document.addEventListener('DOMContentLoaded', loadTasks);
 
-// Manejar el envío del formulario
+// Manejar el envío del formulario para agregar tareas
 addTaskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const title = document.getElementById('title').value;
-    const description = document.getElementById('description').value;
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    if (!title || !description) {
+        alert('El título y la descripción son obligatorios.');
+        return;
+    }
     
     const newTask = {
         title,
@@ -27,31 +47,50 @@ addTaskForm.addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(newTask)
+            body: JSON.stringify(newTask),
+            credentials: 'include'
         });
         
-        if (!response.ok) throw new Error('Error al crear tarea');
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+                throw new Error(errorData.detail || `Error ${response.status}`);
+            } catch {
+                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+            }
+        }
         
-        // Limpiar formulario y recargar tareas
         addTaskForm.reset();
         loadTasks();
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al crear la tarea');
+        console.error('Error al crear tarea:', error);
+        alert(`Error al crear la tarea: ${error.message}`);
     }
 });
 
 // Cargar todas las tareas
 async function loadTasks() {
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Error al cargar tareas');
-        
+        const response = await fetch(API_URL, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+                throw new Error(errorData.detail || `Error ${response.status}`);
+            } catch {
+                const text = await response.text();
+                console.log('Respuesta del servidor:', text);
+                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+            }
+        }
         const tasks = await response.json();
         displayTasks(tasks);
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al cargar las tareas');
+        console.error('Error al cargar tareas:', error);
+        alert(`Error al cargar las tareas: ${error.message}`);
     }
 }
 
@@ -59,7 +98,7 @@ async function loadTasks() {
 function displayTasks(tasks) {
     tasksContainer.innerHTML = '';
     
-    if (tasks.length === 0) {
+    if (!tasks || tasks.length === 0) {
         tasksContainer.innerHTML = '<p>No hay tareas disponibles.</p>';
         return;
     }
@@ -67,36 +106,74 @@ function displayTasks(tasks) {
     tasks.forEach(task => {
         const taskElement = document.createElement('div');
         taskElement.className = 'task';
+        // Escapar datos para mostrar en HTML y evitar XSS
+        const safeTitle = escapeHTML(task.title || '');
+        const safeDescription = escapeHTML(task.description || '');
         taskElement.innerHTML = `
-            <h3>${task.title}</h3>
-            <p>${task.description}</p>
+            <h3>${safeTitle}</h3>
+            <p>${safeDescription}</p>
             <p><strong>Estado:</strong> ${task.isCompleted ? 'Completada' : 'Pendiente'}</p>
             <p><strong>Creada:</strong> ${new Date(task.createdAt).toLocaleString()}</p>
             <div class="task-actions">
-                <button onclick="toggleTaskCompletion('${task.id}', ${!task.isCompleted})">
+                <button class="toggle-btn" data-id="${task.id}" data-completed="${task.isCompleted}">
                     ${task.isCompleted ? 'Marcar como Pendiente' : 'Marcar como Completada'}
                 </button>
-                <button class="edit-btn" onclick="editTask('${task.id}')">Editar</button>
-                <button class="delete-btn" onclick="deleteTask('${task.id}')">Eliminar</button>
+                <button class="edit-btn" data-id="${task.id}" data-title="${safeTitle}" data-description="${safeDescription}">Editar</button>
+                <button class="delete-btn" data-id="${task.id}">Eliminar</button>
             </div>
         `;
         tasksContainer.appendChild(taskElement);
+    });
+    
+    // Añadir eventos a los botones después de renderizar
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const isCompleted = btn.dataset.completed === 'true';
+            toggleTaskCompletion(id, !isCompleted);
+        });
+    });
+    
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const title = btn.dataset.title;
+            const description = btn.dataset.description;
+            editTask(id, title, description);
+        });
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            deleteTask(btn.dataset.id);
+        });
     });
 }
 
 // Cambiar estado de completado
 async function toggleTaskCompletion(taskId, isCompleted) {
     try {
-        // Primero obtenemos la tarea actual
-        const response = await fetch(`${API_URL}/${taskId}`);
-        if (!response.ok) throw new Error('Error al obtener tarea');
+        const response = await fetch(`${API_URL}/${taskId}`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+                throw new Error(errorData.detail || `Error ${response.status}`);
+            } catch {
+                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+            }
+        }
         
         const task = await response.json();
         
-        // Actualizamos solo el estado
         const updatedTask = {
-            ...task,
-            isCompleted
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            isCompleted,
+            createdAt: task.createdAt
         };
         
         const updateResponse = await fetch(`${API_URL}/${taskId}`, {
@@ -104,15 +181,24 @@ async function toggleTaskCompletion(taskId, isCompleted) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedTask)
+            body: JSON.stringify(updatedTask),
+            credentials: 'include'
         });
         
-        if (!updateResponse.ok) throw new Error('Error al actualizar tarea');
+        if (!updateResponse.ok) {
+            let errorData;
+            try {
+                errorData = await updateResponse.json();
+                throw new Error(errorData.detail || `Error ${updateResponse.status}`);
+            } catch {
+                throw new Error(`Error ${updateResponse.status}: Respuesta no JSON`);
+            }
+        }
         
         loadTasks();
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al actualizar la tarea');
+        console.error('Error al actualizar tarea:', error);
+        alert(`Error al actualizar la tarea: ${error.message}`);
     }
 }
 
@@ -122,44 +208,75 @@ async function deleteTask(taskId) {
     
     try {
         const response = await fetch(`${API_URL}/${taskId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         
-        if (!response.ok) throw new Error('Error al eliminar tarea');
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+                throw new Error(errorData.detail || `Error ${response.status}`);
+            } catch {
+                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+            }
+        }
         
         loadTasks();
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al eliminar la tarea');
+        console.error('Error al eliminar tarea:', error);
+        alert(`Error al eliminar la tarea: ${error.message}`);
     }
 }
 
-// Editar tarea (modal básico)
-function editTask(taskId) {
-    // Implementación básica - puedes mejorarla con un modal real
-    const newTitle = prompt('Nuevo título:');
-    if (!newTitle) return;
+// Abrir modal para editar tarea
+function editTask(taskId, title, description) {
+    if (!taskId || title === undefined || description === undefined) {
+        alert('Error: Datos de la tarea no válidos.');
+        return;
+    }
     
-    const newDescription = prompt('Nueva descripción:');
-    if (!newDescription) return;
-    
-    updateTask(taskId, newTitle, newDescription);
+    document.getElementById('editTaskId').value = taskId;
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDescription').value = description;
+    editModal.style.display = 'block';
 }
 
-// Actualizar tarea
-async function updateTask(taskId, title, description) {
+// Manejar el envío del formulario de edición
+editTaskForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const taskId = document.getElementById('editTaskId').value;
+    const title = document.getElementById('editTitle').value.trim();
+    const description = document.getElementById('editDescription').value.trim();
+    
+    if (!title || !description) {
+        alert('El título y la descripción son obligatorios.');
+        return;
+    }
+    
     try {
-        // Primero obtenemos la tarea actual
-        const response = await fetch(`${API_URL}/${taskId}`);
-        if (!response.ok) throw new Error('Error al obtener tarea');
+        const response = await fetch(`${API_URL}/${taskId}`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+                throw new Error(errorData.detail || `Error ${response.status}`);
+            } catch {
+                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+            }
+        }
         
         const task = await response.json();
         
-        // Actualizamos los campos
         const updatedTask = {
-            ...task,
+            id: task.id,
             title,
-            description
+            description,
+            isCompleted: task.isCompleted,
+            createdAt: task.createdAt
         };
         
         const updateResponse = await fetch(`${API_URL}/${taskId}`, {
@@ -167,14 +284,36 @@ async function updateTask(taskId, title, description) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedTask)
+            body: JSON.stringify(updatedTask),
+            credentials: 'include'
         });
         
-        if (!updateResponse.ok) throw new Error('Error al actualizar tarea');
+        if (!updateResponse.ok) {
+            let errorData;
+            try {
+                errorData = await updateResponse.json();
+                throw new Error(errorData.detail || `Error ${updateResponse.status}`);
+            } catch {
+                throw new Error(`Error ${updateResponse.status}: Respuesta no JSON`);
+            }
+        }
         
+        editModal.style.display = 'none';
         loadTasks();
     } catch (error) {
-        console.error('Error:', error);
-        alert('Error al actualizar la tarea');
+        console.error('Error al actualizar tarea:', error);
+        alert(`Error al actualizar la tarea: ${error.message}`);
     }
-}
+});
+
+// Cerrar modal
+closeModal.onclick = () => {
+    editModal.style.display = 'none';
+};
+
+// Cerrar modal al hacer clic fuera
+window.onclick = (event) => {
+    if (event.target === editModal) {
+        editModal.style.display = 'none';
+    }
+};

@@ -1,5 +1,5 @@
 // URL base de la API (para entorno local)
-const API_URL = 'https://github.com/Ricarpell/GestorTareasBack/api/Tasks';
+const API_URL = 'https://gestortareasback-f8zt.onrender.com/api/Tasks';
 
 // Elementos del DOM
 const addTaskForm = document.getElementById('addTaskForm');

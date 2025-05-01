@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Task Manager</h1>
+        
+        <!-- Formulario para agregar tareas -->
+        <div class="task-form">
+            <h2>Agregar Nueva Tarea</h2>
+            <form id="addTaskForm">
+                <input type="text" id="title" placeholder="Título" required>
+                <textarea id="description" placeholder="Descripción" required></textarea>
+                <button type="submit">Agregar Tarea</button>
+            </form>
+        </div>
+        
+        <!-- Lista de tareas -->
+        <div class="task-list">
+            <h2>Tus Tareas</h2>
+            <div id="tasksContainer"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

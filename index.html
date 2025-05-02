@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
+    <title>Prestamo Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Gestor de Tareas</h1>
+        <h1>Cosas Prestadas</h1>
         
         <!-- Formulario para agregar tareas -->
         <div class="task-form">
-            <h2>Agregar Nueva Tarea</h2>
+            <h2>Agregar Nueva Préstamo</h2>
             <form id="addTaskForm">
                 <input type="text" id="title" placeholder="Título" maxlength="100" required>
                 <textarea id="description" placeholder="Descripción" maxlength="500" required></textarea>
-                <button type="submit">Agregar Tarea</button>
+                <button type="submit">Agregar Préstamo</button>
             </form>
         </div>
         
         <!-- Lista de tareas -->
         <div class="task-list">
-            <h2>Tus Tareas</h2>
+            <h2>Tus Préstamos</h2>
             <div id="tasksContainer"></div>
         </div>
     </div>
@@ -31,7 +31,7 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Editar Tarea</h2>
+            <h2>Editar Préstamo</h2>
             <form id="editTaskForm">
                 <input type="hidden" id="editTaskId">
                 <input type="text" id="editTitle" placeholder="Título" maxlength="100" required>

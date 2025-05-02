@@ -76,15 +76,21 @@ async function loadTasks() {
             credentials: 'include'
         });
         if (!response.ok) {
-            let errorData;
+            let errorMessage = `Error ${response.status}`;
             try {
-                errorData = await response.json();
-                throw new Error(errorData.detail || `Error ${response.status}`);
-            } catch {
-                const text = await response.text(); // Línea 84: Aquí ocurre el error
-                console.log('Respuesta del servidor:', text);
-                throw new Error(`Error ${response.status}: Respuesta no JSON`);
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.detail || errorMessage;
+                } else {
+                    const text = await response.text();
+                    console.log('Respuesta del servidor (no JSON):', text);
+                    errorMessage = `Error ${response.status}: ${text || 'Respuesta no disponible'}`;
+                }
+            } catch (err) {
+                console.error('Error al procesar la respuesta:', err);
             }
+            throw new Error(errorMessage);
         }
         const tasks = await response.json();
         displayTasks(tasks);

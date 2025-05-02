@@ -64,8 +64,8 @@ addTaskForm.addEventListener('submit', async (e) => {
         addTaskForm.reset();
         loadTasks();
     } catch (error) {
-        console.error('Error al crear tarea:', error);
-        alert(`Error al crear la tarea: ${error.message}`);
+        console.error('Error al crear:', error);
+        alert(`Error al crear préstamo: ${error.message}`);
     }
 });
 
@@ -95,8 +95,8 @@ async function loadTasks() {
         const tasks = await response.json();
         displayTasks(tasks);
     } catch (error) {
-        console.error('Error al cargar tareas:', error);
-        alert(`Error al cargar las tareas: ${error.message}`);
+        console.error('Error al cargar préstamo:', error);
+        alert(`Error al cargar las préstamo: ${error.message}`);
     }
 }
 
@@ -105,7 +105,7 @@ function displayTasks(tasks) {
     tasksContainer.innerHTML = '';
     
     if (!tasks || tasks.length === 0) {
-        tasksContainer.innerHTML = '<p>No hay tareas disponibles.</p>';
+        tasksContainer.innerHTML = '<p>No hay pendientes.</p>';
         return;
     }
     
@@ -118,11 +118,11 @@ function displayTasks(tasks) {
         taskElement.innerHTML = `
             <h3>${safeTitle}</h3>
             <p>${safeDescription}</p>
-            <p><strong>Estado:</strong> ${task.isCompleted ? 'Completada' : 'Pendiente'}</p>
+            <p><strong>Estado:</strong> ${task.isCompleted ? 'Devuelto' : 'Pendiente'}</p>
             <p><strong>Creada:</strong> ${new Date(task.createdAt).toLocaleString()}</p>
             <div class="task-actions">
                 <button class="toggle-btn" data-id="${task.id}" data-completed="${task.isCompleted}">
-                    ${task.isCompleted ? 'Marcar como Pendiente' : 'Marcar como Completada'}
+                    ${task.isCompleted ? 'Marcar como Pendiente' : 'Marcar como Devuelto'}
                 </button>
                 <button class="edit-btn" data-id="${task.id}" data-title="${safeTitle}" data-description="${safeDescription}">Editar</button>
                 <button class="delete-btn" data-id="${task.id}">Eliminar</button>
@@ -203,14 +203,14 @@ async function toggleTaskCompletion(taskId, isCompleted) {
         
         loadTasks();
     } catch (error) {
-        console.error('Error al actualizar tarea:', error);
-        alert(`Error al actualizar la tarea: ${error.message}`);
+        console.error('Error al actualizar:', error);
+        alert(`Error al actualizar: ${error.message}`);
     }
 }
 
 // Eliminar tarea
 async function deleteTask(taskId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
+    if (!confirm('¿Estás seguro de que quieres eliminar?')) return;
     
     try {
         const response = await fetch(`${API_URL}/${taskId}`, {
@@ -230,15 +230,15 @@ async function deleteTask(taskId) {
         
         loadTasks();
     } catch (error) {
-        console.error('Error al eliminar tarea:', error);
-        alert(`Error al eliminar la tarea: ${error.message}`);
+        console.error('Error al eliminar:', error);
+        alert(`Error al eliminar: ${error.message}`);
     }
 }
 
 // Abrir modal para editar tarea
 function editTask(taskId, title, description) {
     if (!taskId || title === undefined || description === undefined) {
-        alert('Error: Datos de la tarea no válidos.');
+        alert('Error: Datos no válidos.');
         return;
     }
     
@@ -307,8 +307,8 @@ editTaskForm.addEventListener('submit', async (e) => {
         editModal.style.display = 'none';
         loadTasks();
     } catch (error) {
-        console.error('Error al actualizar tarea:', error);
-        alert(`Error al actualizar la tarea: ${error.message}`);
+        console.error('Error al actualizar:', error);
+        alert(`Error al actualizar: ${error.message}`);
     }
 });
 

@@ -81,7 +81,7 @@ async function loadTasks() {
                 errorData = await response.json();
                 throw new Error(errorData.detail || `Error ${response.status}`);
             } catch {
-                const text = await response.text();
+                const text = await response.text(); // Línea 84: Aquí ocurre el error
                 console.log('Respuesta del servidor:', text);
                 throw new Error(`Error ${response.status}: Respuesta no JSON`);
             }
